@@ -6,9 +6,6 @@ import json
 
 from secret import get_oauth_acces_token
 
-# Get token
-OAUTH_TOKEN = get_oauth_acces_token()
-
 # ------------ Constants ------------
 
 RESOURCES_ENDPOINT = "https://api.baubuddy.de/dev/index.php/v1/vehicles/select/active"
@@ -80,29 +77,13 @@ def get_label_id_color_code(label_id: str, oauth_token: str):
         print(f"Got response: {response.json()}")
         return None
 
-
-# --------------- API ---------------
-
-@app.route('/api/v1/post_csv_data', methods=['POST'])
-def post_csv_data():
-
-    # Check if file is present
-    if 'file' not in request.files:
-        print("[!] No file part in the request. Sending eror response.")
-        return jsonify({"status": "error"})
-
-    file_storage_object = request.files['file']
-
-    # Convert CSV to dataframe for easier manipulation
-    df = csv_to_pd_dataframe(file_storage_object, delimeter=';')
-
-    if df is None:
-        print("[!] Invalid CSV file. Sending error response.")
-        return jsonify({"status": "csv_parsing_error"})
-
-    # Get resources from API
-    resources = get_resources(OAUTH_TOKEN)
-
+def merge_resources(df: pd.DataFrame, resources: dict) -> pd.DataFrame:
+    """
+    Merge resources with dataframe.
+    :param df: dataframe.
+    :param resources: resources.
+    :return: dataframe with merged resources.
+    """
     for resource in resources:
         new_row = pd.DataFrame(resource, index=[0])
 
@@ -112,17 +93,40 @@ def post_csv_data():
 
         df = pd.concat([df, new_row], ignore_index=True)
 
-    # Make all rows unique
-    df = df.drop_duplicates()
+    return df
 
-    # Convert all NaNs to None
+# --------------- API ---------------
+
+@app.route('/api/v1/post_csv_data', methods=['POST'])
+def post_csv_data():
+
+    OAUTH_TOKEN = get_oauth_acces_token()
+
+    # Check if file is present
+    if 'file' not in request.files:
+        print("[!] No file part in the request. Sending eror response.")
+        return jsonify({"status": "error"})
+
+    # Get file from request
+    file_storage_object = request.files['file']
+    df = csv_to_pd_dataframe(file_storage_object, delimeter=';')
+
+    if df is None:
+        print("[!] Invalid CSV file. Sending error response.")
+        return jsonify({"status": "csv_parsing_error"})
+
+    # Get resources from API
+    resources = get_resources(OAUTH_TOKEN)
+    df = merge_resources(df, resources)
+
+    # Clean dataframe
+    df = df.drop_duplicates()
     df = df.where(pd.notnull(df), None)
 
     # Add colorCode column
     df['colorCode'] = df['labelIds'].apply(lambda x: get_label_id_color_code(x, OAUTH_TOKEN))
 
     response = df.to_json(orient="index")
-
     return jsonify({"status": "success", "data": response})
 
 # --------------------------------------------
