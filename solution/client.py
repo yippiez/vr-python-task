@@ -23,7 +23,12 @@ def send_binary_csv_to_server(hostname: str, csv_path: str) -> bool:
     with open(csv_path, 'rb') as f:
         file_data = {"file": f}
         response = requests.post(hostname, files=file_data)
-        status = response.json().get('status')
+
+        try:
+            status = response.json().get('status')
+        except requests.exceptions.JSONDecodeError:
+            print("Server returned invalid JSON response.")
+            return False
 
         match (status):
             case "success":
