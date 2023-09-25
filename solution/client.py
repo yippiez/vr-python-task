@@ -23,13 +23,23 @@ def send_binary_csv_to_server(hostname: str, csv_path: str) -> bool:
     with open(csv_path, 'rb') as f:
         file_data = {"file": f}
         response = requests.post(hostname, files=file_data)
+        status = response.json().get('status')
 
-        match (response.status_code):
-            case 200:
+        match (status):
+            case "success":
                 print('File successfully sent to server.')
                 return True
-            case _:
+
+            case "error":
                 print('Error when sending file to server.')
+                return False
+
+            case "csv_parsing_error":
+                print('Succesfully sent csv file but there is an error when parsing CSV file.')
+                return False
+
+            case _:
+                print(f'Unknown error {status} when sending file to server.')
                 return False
 
 if __name__ == "__main__":
