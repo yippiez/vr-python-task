@@ -11,7 +11,7 @@ HOST_PATH = 'http://localhost:8080/api/v1/post_csv_data'
 
 parser = argparse.ArgumentParser(description='CSV Transmitter.')
 parser.add_argument('-k', '--keys', help="labelIds to color. (list of strings)", nargs='+', required=False)
-parser.add_argument('-c', '--colored', help="Color each row if True. (default: True)", default=True, required=False)
+parser.add_argument('-c', '--colored', help="Color each row if True. (default: True)", default=True, required=False, action=argparse.BooleanOptionalAction) # noqa
 
 args = parser.parse_args()
 
@@ -135,9 +135,11 @@ def apply_colors(df: pd.DataFrame, condition1: bool, condition2: bool):
     styler = df.style
 
     if condition1:
+        print("Coloring rows based on hu.")
         styler.apply(highlight_for_hu, axis=1)
 
     if condition2:
+        print("Tinting text colorCode if exists.")
         styler.apply(tint_text_colorCode_if_exists, axis=1)
 
     return styler
