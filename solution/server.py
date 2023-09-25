@@ -6,7 +6,7 @@ import json
 
 from secret import get_oauth_acces_token
 
-# get new token
+# Get token
 OAUTH_TOKEN = get_oauth_acces_token()
 
 # ------------ Constants ------------
@@ -16,8 +16,12 @@ app = Flask(__name__)
 
 # ------------ Functions ------------
 
-def get_resources(oauth_token: str):
-
+def get_resources(oauth_token: str) -> dict:
+    """
+    Get resources from API.
+    :param oauth_token: oauth token.
+    :return: resources from API. (if fails returns None)
+    """
     headers = {
         "Authorization": f"Bearer {oauth_token}",
         "Content-Type": "application/json",
@@ -37,6 +41,12 @@ def get_resources(oauth_token: str):
 
 
 def csv_to_pd_dataframe(csv_path: str, delimeter: str = ',') -> pd.DataFrame:
+    """
+    Read csv file and return pandas dataframe.
+    :param csv_path: path to csv file.
+    :param delimeter: delimeter for csv file.
+    :return: pandas dataframe. (if fails returns None)
+    """
     try:
         return pd.read_csv(csv_path, delimiter=delimeter)
     except pd.errors.ParserError as e:
@@ -45,7 +55,12 @@ def csv_to_pd_dataframe(csv_path: str, delimeter: str = ',') -> pd.DataFrame:
 
 
 def get_label_id_color_code(label_id: str, oauth_token: str):
-
+    """
+    Get color code from label id.
+    :param label_id: label id.
+    :param oauth_token: oauth token.
+    :return: color code. (if fails returns None)
+    """
     if not label_id:
         return None
 
@@ -78,7 +93,7 @@ def post_csv_data():
 
     file_storage_object = request.files['file']
 
-    # Convert csv to dataframe for easier manipulation
+    # Convert CSV to dataframe for easier manipulation
     df = csv_to_pd_dataframe(file_storage_object, delimeter=';')
 
     if df is None:
@@ -100,7 +115,7 @@ def post_csv_data():
     # Make all rows unique
     df = df.drop_duplicates()
 
-    # convert all nans to None
+    # Convert all NaNs to None
     df = df.where(pd.notnull(df), None)
 
     # Add colorCode column
@@ -113,5 +128,5 @@ def post_csv_data():
 # --------------------------------------------
 
 if __name__ == '__main__':
-    # run app in debug mode on port 8080
+    # Run app in debug mode on port 8080
     app.run(debug=True, port=8080)
