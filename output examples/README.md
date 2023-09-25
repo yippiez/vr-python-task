@@ -1,0 +1,1 @@
+# This fodler contains example outputs of client
